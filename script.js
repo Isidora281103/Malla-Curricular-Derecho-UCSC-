@@ -85,7 +85,7 @@ const ramosPorSemestre = {
   ]
 };
 
-// Prerrequisitos (simplificados, puedes expandir si es necesario)
+// Mapa de prerrequisitos
 const prerrequisitos = {
   "Derecho Civil I": ["Derecho Romano", "Teoría del Derecho"],
   "Derecho Constitucional I": ["Derecho Político"],
@@ -100,7 +100,7 @@ const prerrequisitos = {
   "Seminario Jurídico I": ["Derecho Civil I", "Derecho Procesal I"],
   "Derecho Civil III": ["Derecho Civil II"],
   "Derecho Procesal III": ["Derecho Procesal II"],
-  "Derecho Penal I": [],
+  "Derecho Penal I": [], // Tiene restricción de créditos en la realidad
   "Derecho Comercial I": ["Derecho Civil II"],
   "Derecho del Trabajo I": ["Teoría del Derecho"],
   "Derecho Administrativo I": ["Derecho Constitucional I"],
@@ -146,19 +146,29 @@ function crearRamo(ramo) {
   div.className = "ramo";
   div.innerText = ramo.nombre;
 
-  if (prerrequisitos[ramo.nombre] && !verificarPrerrequisitos(ramo.nombre)) {
+  const requisitos = prerrequisitos[ramo.nombre] || [];
+  const cumpleRequisitos = requisitos.every(r => aprobados.has(r));
+
+  if (!cumpleRequisitos) {
     div.classList.add("bloqueado");
+    div.title = `Requiere: ${requisitos.join(", ")}`;
+  }
+
+  if (aprobados.has(ramo.nombre)) {
+    div.classList.add("aprobado");
   }
 
   div.addEventListener("click", () => {
-    if (div.classList.contains("bloqueado")) return;
+    const aunNoCumple = prerrequisitos[ramo.nombre] && !verificarPrerrequisitos(ramo.nombre);
+    if (aunNoCumple) {
+      alert(`No puedes aprobar este ramo aún.\nRequiere: ${prerrequisitos[ramo.nombre].join(", ")}`);
+      return;
+    }
 
-    if (!div.classList.contains("aprobado")) {
-      div.classList.add("aprobado");
+    if (!aprobados.has(ramo.nombre)) {
       aprobados.add(ramo.nombre);
       creditosAprobados += ramo.creditos;
     } else {
-      div.classList.remove("aprobado");
       aprobados.delete(ramo.nombre);
       creditosAprobados -= ramo.creditos;
     }
@@ -184,7 +194,6 @@ function dibujarMalla() {
 
     ramos.forEach(r => {
       const divRamo = crearRamo(r);
-      if (aprobados.has(r.nombre)) divRamo.classList.add("aprobado");
       divSem.appendChild(divRamo);
     });
 
